@@ -1,6 +1,13 @@
 import pytest
+from django.core.cache import cache
 from apps.accounts.models import User
+
+@pytest.fixture(autouse=True)
+def clear_cache():
+    cache.clear()
+
 from apps.courses.models import Course, Module, Lesson
+from apps.assessments.models import Assessment
 
 
 @pytest.fixture
@@ -71,6 +78,15 @@ def lesson(db, module):
         content_type=Lesson.ContentType.TEXT,
         order=1,
         duration_minutes=10
+    )
+
+
+@pytest.fixture
+def assessment(db, lesson):
+    return Assessment.objects.create(
+        title='Test Quiz',
+        lesson=lesson,
+        passing_score=70
     )
 
 

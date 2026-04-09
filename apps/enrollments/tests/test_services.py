@@ -1,5 +1,6 @@
 import pytest
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from apps.enrollments.services import EnrollmentService
 from apps.enrollments.models import Enrollment
 
@@ -36,4 +37,5 @@ class TestEnrollmentService:
     def test_is_enrolled(self, student, course):
         assert EnrollmentService.is_enrolled(student, course) is False
         EnrollmentService.enroll_student(student=student, course=course)
+        cache.clear() # Cache invalidation usually happens on_commit, which doesn't fire in tests
         assert EnrollmentService.is_enrolled(student, course) is True

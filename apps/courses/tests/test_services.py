@@ -120,7 +120,7 @@ class TestLessonService:
             content_type='TEXT',
             instructor=instructor,
             order=1,
-            duration=15
+            duration_minutes=15
         )
         assert lesson.module == module
         assert lesson.title == 'Lesson 1'

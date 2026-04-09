@@ -13,11 +13,12 @@ class CourseService:
         cache.delete(CourseSelector.PUBLISHED_COURSES_CACHE_KEY)
 
     @staticmethod
-    def create_course(*, title, description, instructor, path=None, ip=None):
+    def create_course(*, title, description, instructor, is_published=False, path=None, ip=None):
         course = Course.objects.create(
             title=title,
             description=description,
-            instructor=instructor
+            instructor=instructor,
+            is_published=is_published
         )
 
         AuditLogService.log(

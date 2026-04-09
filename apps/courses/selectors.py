@@ -10,18 +10,10 @@ class CourseSelector:
     CACHE_TTL = 300  # 5 minutes
 
     @staticmethod
-    def get_published_courses() -> list:
-        cached = cache.get(CourseSelector.PUBLISHED_COURSES_CACHE_KEY)
-        if cached is not None:
-            return cached
-
-        qs = Course.objects.filter(
+    def get_published_courses() -> QuerySet:
+        return Course.objects.filter(
             is_published=True
         ).select_related('instructor').prefetch_related('modules__lessons')
-
-        courses = list(qs)
-        cache.set(CourseSelector.PUBLISHED_COURSES_CACHE_KEY, courses, CourseSelector.CACHE_TTL)
-        return courses
 
     @staticmethod
     def get_instructor_courses(instructor) -> QuerySet:

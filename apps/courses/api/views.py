@@ -1,6 +1,8 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError as DRFValidationError
+from django.core.exceptions import ValidationError
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -89,31 +91,46 @@ class CourseViewSet(AuditMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def publish(self, request, uuid=None):
         course = self.get_object()
-        CourseService.publish_course(
-            course=course,
-            instructor=request.user,
-            **self.get_audit_context()
-        )
+        try:
+            CourseService.publish_course(
+                course=course,
+                instructor=request.user,
+                **self.get_audit_context()
+            )
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": "Course published"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
     def unpublish(self, request, uuid=None):
         course = self.get_object()
-        CourseService.unpublish_course(
-            course=course,
-            instructor=request.user,
-            **self.get_audit_context()
-        )
+        try:
+            CourseService.unpublish_course(
+                course=course,
+                instructor=request.user,
+                **self.get_audit_context()
+            )
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": "Course unpublished"})
 
     @action(detail=True, methods=['post'])
     def enroll(self, request, uuid=None):
-        course = self.get_object()
-        EnrollmentService.enroll_student(
-            student=request.user,
-            course=course,
-            **self.get_audit_context()
-        )
+        # use the model directly to find the course even if unpublished, 
+        # so the Service can return a 400 "Course is not published" instead of a 404.
+        try:
+            course = Course.objects.get(uuid=uuid)
+        except Course.DoesNotExist:
+            return Response({"detail": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            EnrollmentService.enroll_student(
+                student=request.user,
+                course=course,
+                **self.get_audit_context()
+            )
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"message": "Enrolled successfully"}, status=status.HTTP_201_CREATED)
 
 
